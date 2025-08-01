@@ -5,15 +5,15 @@
 #include <chrono>
 using namespace std;
 
-#define MAX 160000 //×î´óÃ÷ÎÄ³¤¶È
+#define MAX 160000 //æœ€å¤§æ˜æ–‡é•¿åº¦
 
-//¶¨ÒåÑ­»·×óÒÆº¯Êı
-//Ñ­»·×óÒÆ±ä»»
+//å®šä¹‰å¾ªç¯å·¦ç§»å‡½æ•°
+//å¾ªç¯å·¦ç§»å˜æ¢
 unsigned int leftshift(unsigned int X, unsigned int len)
 {
-    return (X >> (sizeof(unsigned int) * 8 - len) | (X << len));//°´Î»»ò
+    return (X >> (sizeof(unsigned int) * 8 - len) | (X << len));//æŒ‰ä½æˆ–
 }
-//´ó¶Ë×ª»»
+//å¤§ç«¯è½¬æ¢
 #define GET_ULONG_BE(n,b,i) \
 		{\
 		(n) = ((unsigned long)(b)[(i)]     << 24) \
@@ -65,15 +65,15 @@ const unsigned int CK[32] = {
 //T1
 unsigned int T1(unsigned int X)
 {
-    //°´×Ö½Ú»®·ÖX
+    //æŒ‰å­—èŠ‚åˆ’åˆ†X
     unsigned char a[4];
     PUT_ULONG_BE(X, a, 0);
-    //SºĞ·ÇÏßĞÔ±ä»»
+    //Sç›’éçº¿æ€§å˜æ¢
     unsigned char b3 = Sbox[(a[0] & 0xf0) >> 4][a[0] & 0x0f];
     unsigned char b2 = Sbox[(a[1] & 0xf0) >> 4][a[1] & 0x0f];
     unsigned char b1 = Sbox[(a[2] & 0xf0) >> 4][a[2] & 0x0f];
     unsigned char b0 = Sbox[(a[3] & 0xf0) >> 4][a[3] & 0x0f];
-    //Ñ­»·×óÒÆÏßĞÔ±ä»»
+    //å¾ªç¯å·¦ç§»çº¿æ€§å˜æ¢
     unsigned int B = (b3 << 24) | (b2 << 16) | (b1 << 8) |(b0);
     unsigned int C = B ^ leftshift(B, 2) ^ leftshift(B, 10) ^ leftshift(B, 18) ^ leftshift(B, 24);
     return C;
@@ -82,35 +82,35 @@ unsigned int T1(unsigned int X)
 //T2
 unsigned int T2(unsigned int X)
 {
-    //°´×Ö½Ú»®·ÖX
+    //æŒ‰å­—èŠ‚åˆ’åˆ†X
     unsigned char a[4];
     PUT_ULONG_BE(X, a, 0);
-    //SºĞ·ÇÏßĞÔ±ä»»
+    //Sç›’éçº¿æ€§å˜æ¢
     unsigned char b3 = Sbox[(a[0] & 0xf0) >> 4][a[0] & 0x0f];
     unsigned char b2 = Sbox[(a[1] & 0xf0) >> 4][a[1] & 0x0f];
     unsigned char b1 = Sbox[(a[2] & 0xf0) >> 4][a[2] & 0x0f];
     unsigned char b0 = Sbox[(a[3] & 0xf0) >> 4][a[3] & 0x0f];
-    //Ñ­»·×óÒÆÏßĞÔ±ä»»
+    //å¾ªç¯å·¦ç§»çº¿æ€§å˜æ¢
     unsigned int B = (b3 << 24) | (b2 << 16) | (b1 << 8) |(b0);
     unsigned int C = B ^ leftshift(B, 13) ^ leftshift(B, 23);
     return C;
 
 }
-//ÂÖÃÜÔ¿À©Õ¹
+//è½®å¯†é’¥æ‰©å±•
 void setkey(unsigned int rk[32], unsigned int MK[4], unsigned int k[36],int mod)
 {
     k[0] = MK[0] ^ FK[0];
     k[1] = MK[1] ^ FK[1];
     k[2] = MK[2] ^ FK[2];
     k[3] = MK[3] ^ FK[3];
-    //¼ÓÃÜ
+    //åŠ å¯†
     for (int i = 0; i < 32; i++)
     {
         k[i + 4] = k[i] ^ T2(k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ CK[i]);
         rk[i] = k[i + 4];
 
     }
-    //½âÃÜ
+    //è§£å¯†
     if (mod)
     {
         for (int i = 0; i < 16; ++i)
@@ -137,8 +137,8 @@ void round(unsigned int sk[32], const unsigned char input[16], unsigned char out
     PUT_ULONG_BE(X[33], output, 8);
     PUT_ULONG_BE(X[32], output, 12);
 }
-//¼ÓÃÜº¯Êı(cbcÄ£Ê½£¬ÂÖÃÜÔ¿Éú³É£¬ivÊäÈë£¬Ã÷ÎÄÊäÈë£¬³õÊ¼ÃÜÔ¿ÊäÈë)
-//paddingÌî³ä(len²»±»16Õû³ıÊ±Ìî³äÓàÊı)
+//åŠ å¯†å‡½æ•°(cbcæ¨¡å¼ï¼Œè½®å¯†é’¥ç”Ÿæˆï¼Œivè¾“å…¥ï¼Œæ˜æ–‡è¾“å…¥ï¼Œåˆå§‹å¯†é’¥è¾“å…¥)
+//paddingå¡«å……(lenä¸è¢«16æ•´é™¤æ—¶å¡«å……ä½™æ•°)
 void encode(const unsigned char* src, unsigned char* dst, unsigned int MK[4],unsigned int k[36], unsigned char iv[16],size_t& len)
 {
     size_t i;
@@ -191,7 +191,7 @@ void decode(const unsigned char* src, unsigned char* dst, unsigned int MK[4],uns
         dst += 16;
         i -= 16;
     }
-    //²é¿´ÊÇ·ñÌî³ä
+    //æŸ¥çœ‹æ˜¯å¦å¡«å……
     i = fst[len - 1];
     if (i >= 1 && i <= 16)
     {
@@ -205,7 +205,7 @@ char* rand_str_cstyle(int length) {
     std::random_device rd;
     std::mt19937 generator(rd());
 
-    char* output = new char[length + 1];  // +1 ¸ø '\0' Ô¤Áô¿Õ¼ä
+    char* output = new char[length + 1];  
     int index = 0;
 
     while (index < length) {
@@ -215,7 +215,7 @@ char* rand_str_cstyle(int length) {
             randNumb /= 93;
         }
     }
-    output[length] = '\0';  // È·±£ C ·ç¸ñ×Ö·û´®ÒÔ '\0' ½áÎ²
+    output[length] = '\0'; 
     return output;
 }
 
@@ -226,21 +226,21 @@ int main()
     unsigned int key[36] = { 0x0};
     unsigned char iv[16] = { 0 };
     
-    size_t length = MAX;//Ã÷ÎÄ³¤¶È
+    size_t length = MAX;//æ˜æ–‡é•¿åº¦
     unsigned char* ciphertext = new unsigned char[MAX];
     unsigned char* plaintext = new unsigned char[MAX];
-    //Ëæ»úÉú³ÉÃ÷ÎÄ
+    //éšæœºç”Ÿæˆæ˜æ–‡
     char* rand_str = rand_str_cstyle(MAX);
-    size_t m_len = length;//¼ÇÂ¼Ã÷ÎÄ¼ÓÃÜºóÃÜÎÄ³¤¶È
+    size_t m_len = length;//è®°å½•æ˜æ–‡åŠ å¯†åå¯†æ–‡é•¿åº¦
     
-    //¼ÇÂ¼¼ÓÃÜÏàÍ¬³¤¶ÈÃ÷ÎÄËùÓÃÊ±¼ä(Ğ§ÂÊ
+    //è®°å½•åŠ å¯†ç›¸åŒé•¿åº¦æ˜æ–‡æ‰€ç”¨æ—¶é—´(æ•ˆç‡
 
     auto startTP = std::chrono::system_clock::now();
     encode((unsigned char*)rand_str, ciphertext,MK, key, iv, m_len);
     auto endTP = std::chrono::system_clock::now();
-    std::cout << "¼ÓÃÜËùÓÃÊ±¼ä " << std::chrono::duration_cast<std::chrono::microseconds>(endTP - startTP).count() <<"Î¢Ãë"<< std::endl;
+    std::cout << "åŠ å¯†æ‰€ç”¨æ—¶é—´ " << std::chrono::duration_cast<std::chrono::microseconds>(endTP - startTP).count() <<"å¾®ç§’"<< std::endl;
 
-    /*printf("Ã÷ÎÄ:%d,%s\n¼ÓÃÜ½á¹û:%d,", length, rand_str, (int)m_len);
+    /*printf("æ˜æ–‡:%d,%s\nåŠ å¯†ç»“æœ:%d,", length, rand_str, (int)m_len);
     for (int i = 0; i < m_len; i++)
     {
         printf("%02X ", ciphertext[i]);
@@ -253,10 +253,10 @@ int main()
     auto startTP2 = std::chrono::system_clock::now();
     decode(ciphertext, plaintext,MK,key, iv, text_len);
     auto endTP2 = std::chrono::system_clock::now();
-    std::cout << "½âÃÜËùÓÃÊ±¼ä: " << std::chrono::duration_cast<std::chrono::microseconds>(endTP2 - startTP2).count() <<"Î¢Ãë"<< std::endl;
+    std::cout << "è§£å¯†æ‰€ç”¨æ—¶é—´: " << std::chrono::duration_cast<std::chrono::microseconds>(endTP2 - startTP2).count() <<"å¾®ç§’"<< std::endl;
     
     plaintext[text_len] = '\0';
-    //printf("½âÃÜ½á¹û:%d,%s", (int)text_len, plaintext);
+    //printf("è§£å¯†ç»“æœ:%d,%s", (int)text_len, plaintext);
    
     delete[] rand_str, ciphertext, plaintext;
     return 0;
